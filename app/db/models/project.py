@@ -1,0 +1,36 @@
+from datetime import datetime
+from typing import List
+
+from sqlalchemy import String, ForeignKey, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from uuid import UUID
+
+from app.db.models.base import Base, CreatedAtModel, UUIDModel
+
+
+class Project(Base, CreatedAtModel, UUIDModel):
+    __tablename__ = "projects"
+
+    name: Mapped[str] = mapped_column(String, nullable=False)
+
+    is_completed: Mapped[bool] = mapped_column(
+        default=False,
+        nullable=False,
+    )
+
+    # user_id: Mapped[UUID] = mapped_column(
+    #     ForeignKey("users.id", ondelete="CASCADE"),
+    #     nullable=True,
+    #     index=True,
+    # )
+
+    places: Mapped[List["Place"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+    description: Mapped[str | None] = mapped_column(String, nullable=True)
+    start_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # user: Mapped["User"] = relationship(back_populates="projects")
