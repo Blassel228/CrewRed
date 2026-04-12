@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16.4-alpine3.20
-    container_name: hb_postgres
+    container_name: travel_db
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -24,35 +24,52 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
-  app:
-    build: .
-    container_name: hotel_app
-    depends_on:
-      - postgres
-    restart: unless-stopped
+  redis:
+    image: redis:7.2-alpine
+    container_name: ta_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - ${SERVER_PORT}:${SERVER_PORT}
-    expose:
-      - ${SERVER_PORT}
+      - "6379:6379"
     networks:
       - rp-network
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: travel-app
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
     env_file:
       - .env
     environment:
-      - DB_HOST=postgres
+      - DB_HOST=${DB_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    networks:
+      - rp-network
     volumes:
       - .:/app
 
-
 volumes:
-  redis_data:
-    name: redis_data_volume
   db_data:
     name: my_db_data_volume
+  redis_data:
+    name: redis_data_volume
   export_data:
     name: export_data_volume
     external: true
 
 networks:
   rp-network:
-    external: false
+    driver: bridge
