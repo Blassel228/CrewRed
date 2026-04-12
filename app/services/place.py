@@ -1,23 +1,29 @@
+import json
 from uuid import UUID
 
 from fastapi import HTTPException
+from sqlalchemy import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models import Place
+from app.redis.redis_client import redis_client
 from app.repositories.place import PlaceRepository
 from app.repositories.project import ProjectRepository
 from app.schemas.place import PlaceCreate, PlaceVisitedUpdate
 from app.schemas.project import ProjectUpdate
+from app.services.artworkApi import ArtworkApiService
 
 
 class PlaceService:
-    @staticmethod
-    async def _validate_external_api(external_id: str):
-        pass
-
     async def add_to_project(
-        self, db: AsyncSession, place_repo: PlaceRepository, data: PlaceCreate
-    ):
-        existing_place = place_repo.get_one_or_none(
+        self,
+        db: AsyncSession,
+        repo: PlaceRepository,
+        art_work_service: ArtworkApiService,
+        data: PlaceCreate
+    ) -> Sequence[Place]:
+
+        existing_place = await repo.get_one_or_none(
             filters={"project_id": data.project_id, "external_id": data.external_id},
             db=db,
         )
@@ -25,7 +31,20 @@ class PlaceService:
             raise HTTPException(
                 status_code=409, detail="You are trying to add an existing place"
             )
-        count_places = await place_repo.count_palces_for_project(
+
+        cache_key = f"place:{data.external_id}"
+
+        cached = await redis_client.get(cache_key)
+        if cached:
+            return await repo.add(db=db, data=data)
+
+        place_from_api = await art_work_service.get_place_by_external_id(data.external_id)
+        if not place_from_api:
+            raise HTTPException(status_code=404, detail="The place was not found.")
+
+        await redis_client.set(cache_key, json.dumps(place_from_api), ex=3600)
+
+        count_places = await repo.count_palces_for_project(
             project_id=data.project_id, db=db
         )
         if count_places >= 10:
@@ -33,24 +52,23 @@ class PlaceService:
                 status_code=400, detail="Project can have maximum 10 places"
             )
 
-        await self._validate_external_api(data.external_id)
-        return await place_repo.add(db=db, data=data)
+        return await repo.add(db=db, data=data)
 
-    async def get_all_for_project(
-        self, db: AsyncSession, place_repo: PlaceRepository, project_id: UUID
-    ):
-        return await place_repo.get_many_or_none(db, {"project_id": project_id}) or []
-
-    async def get_one_in_project(
+    async def get_many_or_none(
         self,
+        filters: dict[str, any],
         db: AsyncSession,
-        place_repo: PlaceRepository,
-        place_id: UUID,
-        project_id: UUID,
-    ):
-        return await place_repo.get_one_or_none(
-            db, {"id": place_id, "project_id": project_id}
-        )
+        repo: PlaceRepository,
+    ) -> Sequence[Place]:
+        return await repo.get_many_or_none(db, filters) or []
+
+    async def get_one(
+        self,
+        filters: dict[str, any],
+        db: AsyncSession,
+        repo: PlaceRepository,
+    ) -> Sequence[Place]:
+        return await repo.get_one(db=db, filters=filters)
 
     async def update_visited(
         self,
@@ -58,10 +76,11 @@ class PlaceService:
         place_repo: PlaceRepository,
         project_repo: ProjectRepository,
         place_id: UUID,
-        project_id: UUID,
         data: PlaceVisitedUpdate,
-    ):
-        all_places = place_repo.get_many_or_none(
+    ) -> Sequence[Place]:
+        place = await place_repo.get_one(filters={"id": place_id}, db=db)
+        project_id = place.project_id
+        all_places = await place_repo.get_many_or_none(
             db=db, filters={"project_id": project_id}
         )
         if all_places:
@@ -76,5 +95,5 @@ class PlaceService:
                     filters={"id": project_id},
                     data=ProjectUpdate(is_completed=True),
                 )
-
-        return await place_repo.update(db=db, filters={"place_id": place_id}, data=data)
+        res = await place_repo.update(db=db, filters={"id": place_id}, data=data)
+        return res

@@ -6,11 +6,15 @@ from typing import Optional
 from app.schemas.note import NoteRead
 
 
-class PlaceCreate(BaseModel):
+class PlaceCreateIn(BaseModel):
     external_id: str
     name: str
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
+
+
+class PlaceCreate(PlaceCreateIn):
     project_id: UUID
-    location: Optional[str] = None
 
 
 class PlaceVisitedUpdate(BaseModel):
@@ -21,10 +25,10 @@ class PlaceRead(BaseModel):
     id: UUID
     external_id: str
     name: str
-    location: Optional[str] = None
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
     is_visited: bool
     created_at: datetime
-    notes: list[NoteRead] = []
 
     class Config:
         from_attributes = True
