@@ -14,8 +14,7 @@ async def search_artworks(
 ) -> list[dict]:
     return await service.search_places(query=q, limit=limit, offset=offset)
 
+
 @router.get("/{place_id}")
-async def get_place_by_id(
-    service: art_work_dep, place_id: int
-):
+async def get_place_by_id(service: art_work_dep, place_id: int):
     return await service.get_place_by_id(place_id)

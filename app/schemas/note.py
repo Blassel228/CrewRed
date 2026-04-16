@@ -3,8 +3,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+
 class NoteCreateIn(BaseModel):
     content: str
+
 
 class NoteCreate(BaseModel):
     content: str

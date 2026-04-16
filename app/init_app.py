@@ -1,7 +1,7 @@
 import logging
 
-import starlette.formparsers
 import starlette.datastructures
+import starlette.formparsers
 
 starlette.formparsers.MultiPartParser.max_file_size = 100 * 1024 * 1024
 

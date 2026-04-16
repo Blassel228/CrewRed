@@ -3,20 +3,20 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.project import ProjectRepository
-from app.repositories.place import PlaceRepository
 from app.repositories.note import NoteRepository
+from app.repositories.place import PlaceRepository
+from app.repositories.project import ProjectRepository
 from app.repositories.user import UserRepository
 from app.schemas.auth import TokenData
 from app.services.artworkApi import ArtworkApiService
 from app.services.auth import auth_service, AuthService
-from app.services.project import ProjectService
 from app.services.note import NoteService
 from app.services.place import PlaceService
+from app.services.project import ProjectService
 from app.services.user import UserService
-from app.utils.deps import get_db
+from app.utils.unit_of_work import UnitOfWork
 
-get_db_dep = Annotated[AsyncSession, Depends(get_db)]
+unit_of_work_dep = Annotated[UnitOfWork, Depends(UnitOfWork)]
 
 get_current_user = Annotated[TokenData, Depends(auth_service.get_current_user)]
 

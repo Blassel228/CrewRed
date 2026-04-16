@@ -2,8 +2,11 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from app.api.dependencies import get_db_dep, note_repository_dep, note_service_dep, place_repository_dep
-from app.schemas.note import UpdateNote, NoteCreate, NoteCreateIn
+from app.api.dependencies import (
+    unit_of_work_dep,
+    note_service_dep,
+)
+from app.schemas.note import UpdateNote, NoteCreateIn
 
 router = APIRouter()
 
@@ -11,27 +14,26 @@ router = APIRouter()
 @router.put("/{note_id}")
 async def update(
     note_id: UUID,
-    db: get_db_dep,
     data: UpdateNote,
-    repo: note_repository_dep,
+    unit_of_work: unit_of_work_dep,
     service: note_service_dep,
 ):
-    return await service.update(data=data, repo=repo, db=db, filters={"id": note_id})
+    return await service.update(
+        unit_of_work=unit_of_work,
+        data=data,
+        filters={"id": note_id},
+    )
+
 
 @router.post("/{place_id}/notes")
 async def add_note(
     place_id: UUID,
     data: NoteCreateIn,
-    db: get_db_dep,
-    repo: note_repository_dep,
-    place_repo: place_repository_dep,
+    unit_of_work: unit_of_work_dep,
     service: note_service_dep,
 ):
     return await service.add_to_place(
-        db=db,
-        repo=repo,
-        place_repo=place_repo,
+        unit_of_work=unit_of_work,
         place_id=place_id,
-        data=data
+        data=data,
     )
-

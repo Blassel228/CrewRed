@@ -1,5 +1,7 @@
 import asyncio
+
 import uvicorn
+
 from app.core.config import settings
 from app.init_app import app
 

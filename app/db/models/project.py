@@ -1,9 +1,8 @@
-from datetime import datetime
 from typing import List
-
-from sqlalchemy import String, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid import UUID
+
+from sqlalchemy import String, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.models.base import Base, CreatedAtModel, UUIDModel
 

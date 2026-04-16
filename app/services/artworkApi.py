@@ -1,12 +1,14 @@
 import json
+
 from httpx import AsyncClient
+
 from app.core import settings
 from app.redis.redis_client import redis_client
 
 
 class ArtworkApiService:
     async def search_places(
-        self, query: str  = "", limit: int = 10, offset: int = 0
+        self, query: str = "", limit: int = 10, offset: int = 0
     ) -> list[dict]:
 
         cache_key = f"places:{query}:{limit}:{offset}"
@@ -51,9 +53,7 @@ class ArtworkApiService:
             return json.loads(cached)
 
         async with AsyncClient(timeout=10.0) as client:
-            resp = await client.get(
-                f"{settings.ARTIC_BASE}/places/{external_id}"
-            )
+            resp = await client.get(f"{settings.ARTIC_BASE}/places/{external_id}")
 
             if resp.status_code == 404:
                 return None

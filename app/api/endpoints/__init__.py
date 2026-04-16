@@ -1,9 +1,10 @@
 from fastapi import APIRouter
-from app.api.endpoints import project
-from app.api.endpoints import note
-from app.api.endpoints import place
+
 from app.api.endpoints import artWork
 from app.api.endpoints import auth
+from app.api.endpoints import note
+from app.api.endpoints import place
+from app.api.endpoints import project
 from app.api.endpoints import user
 
 api_router = APIRouter(prefix="/api")

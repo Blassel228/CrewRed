@@ -1,9 +1,8 @@
 from datetime import datetime
-from uuid import UUID
-from pydantic import BaseModel
 from typing import Optional
+from uuid import UUID
 
-from app.schemas.note import NoteRead
+from pydantic import BaseModel
 
 
 class PlaceCreateIn(BaseModel):
